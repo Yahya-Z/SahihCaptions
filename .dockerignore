@@ -1,0 +1,84 @@
+# 1. Version control
+.git/
+.gitignore
+.gitattributes
+.github/
+.svn/
+.hg/
+
+# 2. Node.js dependencies and artifacts
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# 3. PHP Composer vendor (handled by Docker build, not source)
+vendor/
+
+# 4. Build outputs and static assets
+dist/
+build/
+out/
+public/build/
+
+# 5. IDE/editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 6. Test and coverage artifacts
+test/
+tests/
+coverage/
+*.test
+*.spec.*
+
+# 7. Temporary and debug files
+tmp/
+temp/
+*.tmp
+*.log
+debug/
+
+# 8. Environment and secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.crt
+
+# 9. Local and user-specific config
+.local/
+*.local.yml
+config.local.*
+
+# 10. Documentation and markdown
+README*
+*.md
+docs/
+
+# 11. Docker and Compose files
+docker-compose.override.yml
+
+# 12. Miscellaneous
+*.bak
+*.old
+*.orig
+
+# 13. Database and storage
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+database/*.sqlite
+
+# 14. Editor config (not needed in image)
+.editorconfig
+.prettierrc
+.prettierignore
+
+# 15. Other config not needed in image
+components.json
