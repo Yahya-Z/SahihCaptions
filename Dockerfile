@@ -1,6 +1,9 @@
 # Use PHP 8.2 with Apache (more stable than Alpine for beginners)
 FROM php:8.2-apache
 
+# Copy your existing .env file
+COPY .env .env
+
 # Set working directory
 WORKDIR /var/www/html
 
@@ -58,14 +61,11 @@ RUN npm prune --omit=dev || echo "Cleanup failed, continuing..."
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Remove these lines
+# Create .env from .env.example if .env doesn't exist
 # RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
+# Generate application key and run post-install scripts
 # RUN php artisan key:generate
-
-# Add this instead
-ENV APP_KEY=${APP_KEY}
-
-# Run post-install scripts
 RUN composer dump-autoload --optimize
 
 # Expose port 80
