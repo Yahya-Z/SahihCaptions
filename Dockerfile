@@ -66,7 +66,7 @@ RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Generate application key and run post-install scripts
 # RUN php artisan key:generate
-RUN composer dump-autoload --optimize
+RUN composer dump-autoload --optimize --no-scripts
 
 # Expose port 80
 EXPOSE 80
