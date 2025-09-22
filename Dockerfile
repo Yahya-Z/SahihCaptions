@@ -31,20 +31,14 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copy composer files
-COPY composer.json composer.lock ./
+# Copy application code first
+COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Copy package.json files for Node.js dependencies
-COPY package.json package-lock.json ./
-
 # Install Node.js dependencies
 RUN npm ci --only=production
-
-# Copy application code
-COPY . .
 
 # Build Vue assets
 RUN npm run build
