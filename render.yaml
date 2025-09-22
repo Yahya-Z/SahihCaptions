@@ -1,0 +1,45 @@
+services:
+  # Web service (your Laravel app)
+  - type: web
+    name: sahihcaptions-app
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://sahihcaptions-app.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: sahihcaptions-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: sahihcaptions-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: sahihcaptions-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: sahihcaptions-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: sahihcaptions-db
+          property: password
+
+  # Database service
+databases:
+  - name: sahihcaptions-db
+    databaseName: sahihcaptions
+    user: sahihcaptions_user
+    plan: free

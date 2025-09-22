@@ -1,51 +1,64 @@
-# syntax=docker/dockerfile:1
+# Use PHP 8.2 with Apache (more stable than Alpine for beginners)
+FROM php:8.2-apache
 
-# --- Builder stage: install PHP dependencies ---
-FROM composer:2.7 AS vendor
-WORKDIR /app
-# Copy only composer files for dependency install
-COPY --link composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-progress
+# Set working directory
+WORKDIR /var/www/html
 
-# --- Final stage: PHP runtime ---
-FROM php:8.2-fpm-alpine AS final
-
-# Install system dependencies and PHP extensions
-RUN apk add --no-cache \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    libzip \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
-    bash \
-    shadow \
-    curl \
-    icu-libs \
-    oniguruma \
-    mysql-client \
-    && docker-php-ext-install pdo pdo_mysql zip intl mbstring
+    nodejs \
+    npm \
+    default-pgsql-client \
+    && docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
 
-WORKDIR /app
+# Configure Apache document root
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copy application code (excluding .env, .git, etc. via .dockerignore)
-COPY --link . .
+# Copy composer files
+COPY composer.json composer.lock ./
 
-# Copy installed PHP dependencies from builder
-COPY --link --from=vendor /app/vendor ./vendor
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Ensure storage and bootstrap/cache are writable
-RUN mkdir -p storage/framework storage/logs bootstrap/cache \
-    && chown -R appuser:appgroup storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# Copy package.json files for Node.js dependencies
+COPY package.json package-lock.json ./
 
-USER appuser
+# Install Node.js dependencies
+RUN npm ci --only=production
 
-# Expose port 9000 for PHP-FPM
-EXPOSE 9000
+# Copy application code
+COPY . .
 
-# Entrypoint for PHP-FPM
-CMD ["php-fpm"]
+# Build Vue assets
+RUN npm run build
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Create .env from .env.example if .env doesn't exist
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
+# Generate application key
+RUN php artisan key:generate
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
