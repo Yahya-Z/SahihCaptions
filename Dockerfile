@@ -31,11 +31,19 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
+# Add Apache configuration for Laravel
+RUN echo '<Directory /var/www/html/public>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+</Directory>' > /etc/apache2/conf-available/laravel.conf \
+    && a2enconf laravel
+
 # Copy application code first
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install PHP dependencies (skip scripts during install)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install Node.js dependencies
 RUN npm ci --only=production
@@ -50,8 +58,9 @@ RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 # Create .env from .env.example if .env doesn't exist
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# Generate application key
+# Generate application key and run post-install scripts
 RUN php artisan key:generate
+RUN composer dump-autoload --optimize
 
 # Expose port 80
 EXPOSE 80
