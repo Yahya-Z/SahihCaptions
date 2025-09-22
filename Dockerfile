@@ -58,11 +58,14 @@ RUN npm prune --omit=dev || echo "Cleanup failed, continuing..."
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Create .env from .env.example if .env doesn't exist
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
+# Remove these lines
+# RUN if [ ! -f .env ]; then cp .env.example .env; fi
+# RUN php artisan key:generate
 
-# Generate application key and run post-install scripts
-RUN php artisan key:generate
+# Add this instead
+ENV APP_KEY=${APP_KEY}
+
+# Run post-install scripts
 RUN composer dump-autoload --optimize
 
 # Expose port 80
