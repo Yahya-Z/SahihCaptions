@@ -65,8 +65,10 @@ RUN npm run build || echo "Build failed, continuing without assets..."
 RUN npm prune --omit=dev || echo "Cleanup failed, continuing..."
 
 # Set permissions (create directories first, then set permissions)
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage && \
+    chown -R www-data:www-data /var/www/html/bootstrap/cache && \
+    chmod -R 775 /var/www/html/storage && \
+    chmod -R 775 /var/www/html/bootstrap/cache
 
 # Create .env from .env.example if .env doesn't exist
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
