@@ -3,8 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\App;
-
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,6 +12,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         if ($this->app->environment('local')) {
+            $this->app->register(\Laravel\Pail\PailServiceProvider::class);
         }
     }
 
