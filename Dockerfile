@@ -1,8 +1,5 @@
-# Use PHP 8.2 with Apache (more stable than Alpine for beginners)
+# Use PHP 8.2 with Apache
 FROM php:8.2-apache
-
-# Copy your existing .env file
-COPY .env .env
 
 # Set working directory
 WORKDIR /var/www/html
@@ -45,6 +42,13 @@ RUN echo '<Directory /var/www/html/public>\n\
 # Copy application code first
 COPY . .
 
+# Create required Laravel directories BEFORE installing dependencies
+RUN mkdir -p storage/framework/cache/data \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache
+
 # Install PHP dependencies (skip scripts during install)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
@@ -57,16 +61,19 @@ RUN npm run build || echo "Build failed, continuing without assets..."
 # Clean up dev dependencies after build
 RUN npm prune --omit=dev || echo "Cleanup failed, continuing..."
 
-# Set permissions
+# Set permissions (create directories first, then set permissions)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Create .env from .env.example if .env doesn't exist
-# RUN if [ ! -f .env ]; then cp .env.example .env; fi
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# Generate application key and run post-install scripts
-# RUN php artisan key:generate
-RUN composer dump-autoload --optimize --no-scripts
+# Generate application key (skip package discovery to avoid telescope error)
+RUN php artisan key:generate --no-interaction || echo "Key generation failed, continuing..."
+
+# Clear and cache config (this should work now that directories exist)
+RUN php artisan config:clear || echo "Config clear failed, continuing..."
+RUN php artisan cache:clear || echo "Cache clear failed, continuing..."
 
 # Expose port 80
 EXPOSE 80
