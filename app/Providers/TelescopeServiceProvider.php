@@ -14,20 +14,14 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     public function register(): void
     {
-        // Telescope::night();
+        // Only register Telescope if we're in local environment
+        if ($this->app->environment('local')) {
+            $this->hideSensitiveRequestDetails();
 
-        $this->hideSensitiveRequestDetails();
-
-        $isLocal = $this->app->environment('local');
-
-        Telescope::filter(function (IncomingEntry $entry) use ($isLocal) {
-            return $isLocal ||
-                   $entry->isReportableException() ||
-                   $entry->isFailedRequest() ||
-                   $entry->isFailedJob() ||
-                   $entry->isScheduledTask() ||
-                   $entry->hasMonitoredTag();
-        });
+            Telescope::filter(function (IncomingEntry $entry) {
+                return true;
+            });
+        }
     }
 
     /**
@@ -57,7 +51,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     {
         Gate::define('viewTelescope', function ($user) {
             return in_array($user->email, [
-                //
+                // Add authorized email addresses here
             ]);
         });
     }
