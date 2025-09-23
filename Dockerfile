@@ -49,8 +49,11 @@ RUN mkdir -p storage/framework/cache/data \
     && mkdir -p storage/logs \
     && mkdir -p bootstrap/cache
 
-# Install PHP dependencies (skip scripts during install)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Install PHP dependencies (include dev dependencies since Laravel 12 needs them)
+RUN composer install --optimize-autoloader --no-interaction
+
+# Generate basic autoloader with package discovery
+RUN composer dump-autoload --optimize
 
 # Install Node.js dependencies (including dev dependencies for build)
 RUN npm ci
@@ -68,10 +71,13 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 # Create .env from .env.example if .env doesn't exist
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# Generate application key (skip package discovery to avoid telescope error)
-RUN php artisan key:generate --no-interaction || echo "Key generation failed, continuing..."
+# Generate application key and run Laravel setup
+RUN php artisan key:generate --no-interaction
 
-# Clear and cache config (this should work now that directories exist)
+# Run package discovery to properly register all packages
+RUN php artisan package:discover --ansi
+
+# Clear caches to ensure clean state
 RUN php artisan config:clear || echo "Config clear failed, continuing..."
 RUN php artisan cache:clear || echo "Cache clear failed, continuing..."
 
